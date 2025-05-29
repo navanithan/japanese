@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Japanese Vocabulary Quiz</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@materializecss/materialize@1.0.0/dist/css/materialize.min.css" rel="stylesheet">
+  <style>
+    .quiz-card {
+      margin-top: 50px;
+      padding: 20px;
+    }
+    .controls {
+      margin-top: 30px;
+    }
+    .word-display {
+      font-size: 2rem;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body class="container">
+
+  <h4 class="center-align">Japanese Vocabulary Quiz</h4>
+
+  <div class="input-field">
+    <select id="lessonSelect">
+      <option value="all">All Lessons</option>
+    </select>
+    <label>Select Lesson</label>
+  </div>
+
+  <p>
+    <label>
+      <input type="checkbox" id="randomOrder" />
+      <span>Random Order</span>
+    </label>
+  </p>
+
+  <p>
+    <label>
+      <input type="checkbox" id="showMeaning" checked />
+      <span>Show Meaning</span>
+    </label>
+  </p>
+
+  <p>
+    <label>
+      <input type="checkbox" id="showHiragana" checked />
+      <span>Show Hiragana</span>
+    </label>
+  </p>
+
+  <p>
+    <label>
+      <input type="checkbox" id="showJapanese" checked />
+      <span>Show Japanese</span>
+    </label>
+  </p>
+
+  <div class="card quiz-card center-align">
+    <div class="word-display" id="japaneseWord">--</div>
+    <div class="word-display" id="hiragana">--</div>
+    <div class="word-display" id="english">--</div>
+    <a class="waves-effect waves-light btn" id="nextButton">Next</a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@materializecss/materialize@1.0.0/dist/js/materialize.min.js"></script>
+  <script>
+    let vocab = [];
+    let currentList = [];
+    let currentIndex = 0;
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const elems = document.querySelectorAll('select');
+      M.FormSelect.init(elems);
+      fetch('./data/vocab.json')
+        .then(response => response.json())
+        .then(data => {
+          vocab = data;
+          populateLessonDropdown();
+          filterWords();
+          showNextWord();
+        });
+
+      document.getElementById('lessonSelect').addEventListener('change', () => {
+        filterWords();
+        showNextWord();
+      });
+
+      document.getElementById('randomOrder').addEventListener('change', () => {
+        filterWords();
+        showNextWord();
+      });
+
+      document.getElementById('nextButton').addEventListener('click', () => {
+        showNextWord();
+      });
+
+      document.getElementById('showMeaning').addEventListener('change', () => {
+        document.getElementById('english').style.display = document.getElementById('showMeaning').checked ? 'block' : 'none';
+      });
+
+      document.getElementById('showHiragana').addEventListener('change', () => {
+        document.getElementById('hiragana').style.display = document.getElementById('showHiragana').checked ? 'block' : 'none';
+      });
+
+      document.getElementById('showJapanese').addEventListener('change', () => {
+        document.getElementById('japaneseWord').style.display = document.getElementById('showJapanese').checked ? 'block' : 'none';
+      });
+    });
+
+    function populateLessonDropdown() {
+      const lessons = [...new Set(vocab.map(item => item.lesson))];
+      const select = document.getElementById('lessonSelect');
+      lessons.forEach(lesson => {
+        const option = document.createElement('option');
+        option.value = lesson;
+        option.textContent = `Lesson ${lesson}`;
+        select.appendChild(option);
+      });
+      M.FormSelect.init(select);
+    }
+
+    function filterWords() {
+      const selectedLesson = document.getElementById('lessonSelect').value;
+      currentList = selectedLesson === 'all' ? [...vocab] : vocab.filter(item => item.lesson == selectedLesson);
+      if (document.getElementById('randomOrder').checked) {
+        shuffleArray(currentList);
+      }
+      currentIndex = 0;
+    }
+
+    function showNextWord() {
+      if (currentList.length === 0) return;
+      const word = currentList[currentIndex];
+      document.getElementById('japaneseWord').textContent = word.japanese;
+      document.getElementById('hiragana').textContent = word.japaneseAllHiragana;
+      document.getElementById('english').textContent = word.english;
+
+      document.getElementById('english').style.display = document.getElementById('showMeaning').checked ? 'block' : 'none';
+      document.getElementById('hiragana').style.display = document.getElementById('showHiragana').checked ? 'block' : 'none';
+      document.getElementById('japaneseWord').style.display = document.getElementById('showJapanese').checked ? 'block' : 'none';
+
+      currentIndex = (currentIndex + 1) % currentList.length;
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+  </script>
+</body>
+</html>
